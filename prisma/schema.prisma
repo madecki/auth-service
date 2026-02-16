@@ -1,0 +1,77 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// =============================================================================
+// Users
+// =============================================================================
+model User {
+  id           String   @id @default(uuid()) @db.Uuid
+  email        String   @unique @db.VarChar(255)
+  passwordHash String   @map("password_hash") @db.VarChar(255)
+  isActive     Boolean  @default(true) @map("is_active")
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt    DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  refreshTokens RefreshToken[]
+
+  @@index([email])
+  @@map("users")
+}
+
+// =============================================================================
+// Refresh Tokens
+// =============================================================================
+model RefreshToken {
+  id                String    @id @default(uuid()) @db.Uuid
+  userId            String    @map("user_id") @db.Uuid
+  tokenHash         String    @unique @map("token_hash") @db.VarChar(255)
+  expiresAt         DateTime  @map("expires_at") @db.Timestamptz
+  revokedAt         DateTime? @map("revoked_at") @db.Timestamptz
+  createdAt         DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  replacedByTokenId String?   @unique @map("replaced_by_token_id") @db.Uuid
+  ip                String?   @db.VarChar(45)
+  userAgent         String?   @map("user_agent") @db.VarChar(500)
+
+  user          User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  replacedBy    RefreshToken? @relation("TokenRotation", fields: [replacedByTokenId], references: [id])
+  replacesToken RefreshToken? @relation("TokenRotation")
+
+  @@index([userId, expiresAt])
+  @@index([tokenHash])
+  @@map("refresh_tokens")
+}
+
+// =============================================================================
+// Signing Keys
+// =============================================================================
+enum SigningKeyStatus {
+  ACTIVE
+  RETIRED
+
+  @@map("signing_key_status")
+}
+
+model SigningKey {
+  kid                 String           @id @db.VarChar(64)
+  publicJwk           Json             @map("public_jwk") @db.JsonB
+  privateKeyEncrypted String?          @map("private_key_encrypted") @db.Text
+  algorithm           String           @default("RS256") @db.VarChar(16)
+  status              SigningKeyStatus @default(ACTIVE)
+  isCurrent           Boolean          @default(false) @map("is_current")
+  createdAt           DateTime         @default(now()) @map("created_at") @db.Timestamptz
+  lastUsedAt          DateTime?        @map("last_used_at") @db.Timestamptz
+  retiredAt           DateTime?        @map("retired_at") @db.Timestamptz
+
+  @@index([status, createdAt])
+  @@index([isCurrent])
+  @@map("signing_keys")
+}
