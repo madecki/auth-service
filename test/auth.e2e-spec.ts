@@ -74,7 +74,7 @@ describe('Auth (e2e)', () => {
       expect(response.body.error.code).toBe('EMAIL_EXISTS');
     });
 
-    it('should reject weak password', async () => {
+    it('should reject weak password and return missing requirements', async () => {
       const response = await request(app.getHttpServer())
         .post('/v1/auth/register')
         .send({
@@ -83,7 +83,10 @@ describe('Auth (e2e)', () => {
         })
         .expect(400);
 
-      expect(response.body.error.code).toBe('VALIDATION_ERROR');
+      expect(response.body.error.code).toBe('WEAK_PASSWORD');
+      expect(response.body.error.details).toBeDefined();
+      expect(Array.isArray(response.body.error.details.passwordRequirements)).toBe(true);
+      expect(response.body.error.details.passwordRequirements.length).toBeGreaterThan(0);
     });
 
     it('should reject invalid email', async () => {

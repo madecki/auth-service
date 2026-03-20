@@ -79,7 +79,7 @@ describe('AuthService', () => {
 
       const result = await service.register({
         email: 'test@example.com',
-        password: 'SecurePassword123',
+        password: 'SecurePassword123!',
       });
 
       expect(result).toEqual({
@@ -87,7 +87,7 @@ describe('AuthService', () => {
         accessToken: 'access-token',
         refreshToken: 'refresh-token',
       });
-      expect(usersService.createUser).toHaveBeenCalledWith('test@example.com', 'SecurePassword123');
+      expect(usersService.createUser).toHaveBeenCalledWith('test@example.com', 'SecurePassword123!');
     });
 
     it('should pass metadata to refresh token generation', async () => {
@@ -99,7 +99,7 @@ describe('AuthService', () => {
       });
 
       await service.register(
-        { email: 'test@example.com', password: 'SecurePassword123' },
+        { email: 'test@example.com', password: 'SecurePassword123!' },
         { ip: '127.0.0.1', userAgent: 'Test Browser' },
       );
 
@@ -122,7 +122,7 @@ describe('AuthService', () => {
 
       const result = await service.login({
         email: 'test@example.com',
-        password: 'SecurePassword123',
+        password: 'SecurePassword123!',
       });
 
       expect(result).toEqual({

@@ -10,11 +10,10 @@ export class RegisterDto {
   email!: string;
 
   @ApiProperty({
-    example: 'securePassword123',
-    description: 'Password (minimum 10 characters)',
-    minLength: 10,
+    example: 'SecurePassword123!',
+    description: 'Password (min 10 chars, upper, lower, digit, special)',
   })
   @IsString()
-  @MinLength(10, { message: 'Password must be at least 10 characters long' })
+  @MinLength(1, { message: 'Password is required' })
   password!: string;
 }

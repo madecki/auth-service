@@ -1,5 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { ConflictException } from '@nestjs/common';
+import { BadRequestException, ConflictException } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { UsersRepository } from './users.repository';
 
@@ -38,7 +38,7 @@ describe('UsersService', () => {
       repository.existsByEmail.mockResolvedValue(false);
       repository.create.mockResolvedValue(mockUser);
 
-      const result = await service.createUser('test@example.com', 'SecurePassword123');
+      const result = await service.createUser('test@example.com', 'SecurePassword123!');
 
       expect(result).toEqual(mockUser);
       expect(repository.existsByEmail).toHaveBeenCalledWith('test@example.com');
@@ -52,7 +52,7 @@ describe('UsersService', () => {
       repository.existsByEmail.mockResolvedValue(false);
       repository.create.mockResolvedValue(mockUser);
 
-      await service.createUser('TEST@EXAMPLE.COM', 'SecurePassword123');
+      await service.createUser('TEST@EXAMPLE.COM', 'SecurePassword123!');
 
       expect(repository.existsByEmail).toHaveBeenCalledWith('test@example.com');
     });
@@ -60,24 +60,27 @@ describe('UsersService', () => {
     it('should throw ConflictException if email exists', async () => {
       repository.existsByEmail.mockResolvedValue(true);
 
-      await expect(service.createUser('test@example.com', 'SecurePassword123')).rejects.toThrow(
+      await expect(service.createUser('test@example.com', 'SecurePassword123!')).rejects.toThrow(
         ConflictException,
       );
     });
 
-    it('should throw ConflictException for weak password (too short)', async () => {
+    it('should throw BadRequestException for weak password with missing requirements', async () => {
       repository.existsByEmail.mockResolvedValue(false);
 
-      await expect(service.createUser('test@example.com', 'short')).rejects.toThrow(
-        ConflictException,
-      );
+      const err = await service.createUser('test@example.com', 'short').catch((e) => e);
+      expect(err).toBeInstanceOf(BadRequestException);
+      const response = err.getResponse() as { code: string; details?: { passwordRequirements: string[] } };
+      expect(response.code).toBe('WEAK_PASSWORD');
+      expect(Array.isArray(response.details?.passwordRequirements)).toBe(true);
+      expect(response.details!.passwordRequirements.length).toBeGreaterThan(0);
     });
 
-    it('should accept password with exactly 10 characters', async () => {
+    it('should accept password meeting all criteria', async () => {
       repository.existsByEmail.mockResolvedValue(false);
       repository.create.mockResolvedValue(mockUser);
 
-      await expect(service.createUser('test@example.com', '1234567890')).resolves.toBeDefined();
+      await expect(service.createUser('test@example.com', 'SecurePassword123!')).resolves.toBeDefined();
     });
   });
 
@@ -90,8 +93,8 @@ describe('UsersService', () => {
         passwordHash: data.passwordHash,
       }));
 
-      const user = await service.createUser('test@example.com', 'SecurePassword123');
-      const result = await service.verifyPassword('SecurePassword123', user.passwordHash);
+      const user = await service.createUser('test@example.com', 'SecurePassword123!');
+      const result = await service.verifyPassword('SecurePassword123!', user.passwordHash);
 
       expect(result).toBe(true);
     });
@@ -103,7 +106,7 @@ describe('UsersService', () => {
         passwordHash: data.passwordHash,
       }));
 
-      const user = await service.createUser('test@example.com', 'SecurePassword123');
+      const user = await service.createUser('test@example.com', 'SecurePassword123!');
       const result = await service.verifyPassword('WrongPassword123', user.passwordHash);
 
       expect(result).toBe(false);

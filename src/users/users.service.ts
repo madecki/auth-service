@@ -1,7 +1,8 @@
-import { Injectable, ConflictException } from '@nestjs/common';
+import { Injectable, BadRequestException, ConflictException } from '@nestjs/common';
 import { User } from '@prisma/client';
 import * as argon2 from 'argon2';
 import { UsersRepository } from './users.repository';
+import { getMissingPasswordRequirements } from './password-validation';
 
 const ARGON2_OPTIONS: argon2.Options = {
   type: argon2.argon2id,
@@ -9,8 +10,6 @@ const ARGON2_OPTIONS: argon2.Options = {
   timeCost: 3,
   parallelism: 4,
 };
-
-const MIN_PASSWORD_LENGTH = 10;
 
 @Injectable()
 export class UsersService {
@@ -62,10 +61,12 @@ export class UsersService {
   }
 
   private validatePassword(password: string): void {
-    if (password.length < MIN_PASSWORD_LENGTH) {
-      throw new ConflictException({
+    const missing = getMissingPasswordRequirements(password);
+    if (missing.length > 0) {
+      throw new BadRequestException({
         code: 'WEAK_PASSWORD',
-        message: `Password must be at least ${MIN_PASSWORD_LENGTH} characters long`,
+        message: 'Password does not meet requirements',
+        details: { passwordRequirements: missing },
       });
     }
   }
