@@ -1,12 +1,34 @@
 import { z } from 'zod';
 
+/**
+ * Prisma PostgreSQL URLs often fail z.string().url() when userinfo contains reserved
+ * characters (e.g. @, :, #) that are not percent-encoded — the WHATWG URL parser rejects
+ * them even though node-postgres / Prisma accept the string.
+ */
+function isValidDatabaseUrl(value: string): boolean {
+  const v = value.trim();
+  if (!v) return false;
+  if (/^postgres(ql)?:\/\/.+/i.test(v)) {
+    return true;
+  }
+  try {
+    new URL(v);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 export const envSchema = z.object({
   // Application
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
   PORT: z.coerce.number().default(4001),
 
   // Database
-  DATABASE_URL: z.string().url(),
+  DATABASE_URL: z
+    .string()
+    .min(1, 'DATABASE_URL is required')
+    .refine(isValidDatabaseUrl, { message: 'Invalid database URL' }),
 
   // JWT
   JWT_ISSUER: z.string().url(),
