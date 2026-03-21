@@ -29,9 +29,6 @@ yarn-error.log*
 # Coverage
 coverage
 
-# Keys (dev only - should not be committed)
-keys/
-
 # Prisma
 prisma/*.db
 prisma/*.db-journal
