@@ -32,7 +32,10 @@ export class AuthController {
     description: 'User registered successfully',
     type: AuthResponseDto,
   })
-  @ApiResponse({ status: 400, description: 'Validation error or weak password (see error.details.passwordRequirements)' })
+  @ApiResponse({
+    status: 400,
+    description: 'Validation error or weak password (see error.details.passwordRequirements)',
+  })
   @ApiResponse({ status: 409, description: 'Email already exists' })
   async register(@Body() dto: RegisterDto, @Req() req: FastifyRequest): Promise<AuthResponseDto> {
     return this.authService.register(dto, {

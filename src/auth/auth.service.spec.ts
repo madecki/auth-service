@@ -87,7 +87,10 @@ describe('AuthService', () => {
         accessToken: 'access-token',
         refreshToken: 'refresh-token',
       });
-      expect(usersService.createUser).toHaveBeenCalledWith('test@example.com', 'SecurePassword123!');
+      expect(usersService.createUser).toHaveBeenCalledWith(
+        'test@example.com',
+        'SecurePassword123!',
+      );
     });
 
     it('should pass metadata to refresh token generation', async () => {

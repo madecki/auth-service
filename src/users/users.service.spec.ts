@@ -70,7 +70,10 @@ describe('UsersService', () => {
 
       const err = await service.createUser('test@example.com', 'short').catch((e) => e);
       expect(err).toBeInstanceOf(BadRequestException);
-      const response = err.getResponse() as { code: string; details?: { passwordRequirements: string[] } };
+      const response = err.getResponse() as {
+        code: string;
+        details?: { passwordRequirements: string[] };
+      };
       expect(response.code).toBe('WEAK_PASSWORD');
       expect(Array.isArray(response.details?.passwordRequirements)).toBe(true);
       expect(response.details!.passwordRequirements.length).toBeGreaterThan(0);
@@ -80,7 +83,9 @@ describe('UsersService', () => {
       repository.existsByEmail.mockResolvedValue(false);
       repository.create.mockResolvedValue(mockUser);
 
-      await expect(service.createUser('test@example.com', 'SecurePassword123!')).resolves.toBeDefined();
+      await expect(
+        service.createUser('test@example.com', 'SecurePassword123!'),
+      ).resolves.toBeDefined();
     });
   });
 
